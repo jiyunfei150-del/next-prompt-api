@@ -12,18 +12,17 @@
   --bg:#f6f7f8; --panel:#ffffff; --fg:#1d2328; --muted:#5b6670; --line:#dde2e6;
   --accent:#0f6b73; --accent-soft:#e3f1f2; --code-bg:#f0f2f4; --code-fg:#23303a;
   --get:#1f7a4d; --post:#2957a4; --put:#a4661b; --warn-bg:#fff6e5; --warn-fg:#7a4b00;
-  --ghost:#8f97a3;
   --sans:"IBM Plex Sans","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#12171b; --panel:#182026; --fg:#e4e9ec; --muted:#9aa7b0; --line:#2a353d;
   --accent:#5fc3cb; --accent-soft:#16333a; --code-bg:#0f1418; --code-fg:#d6e0e6;
-  --get:#5bc48b; --post:#7ea6ea; --put:#e0a55a; --warn-bg:#2f2614; --warn-fg:#f0c77a; --ghost:#6f7b84; color-scheme:dark}}
+  --get:#5bc48b; --post:#7ea6ea; --put:#e0a55a; --warn-bg:#2f2614; --warn-fg:#f0c77a; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#12171b; --panel:#182026; --fg:#e4e9ec; --muted:#9aa7b0; --line:#2a353d;
   --accent:#5fc3cb; --accent-soft:#16333a; --code-bg:#0f1418; --code-fg:#d6e0e6;
-  --get:#5bc48b; --post:#7ea6ea; --put:#e0a55a; --warn-bg:#2f2614; --warn-fg:#f0c77a; --ghost:#6f7b84; color-scheme:dark}
+  --get:#5bc48b; --post:#7ea6ea; --put:#e0a55a; --warn-bg:#2f2614; --warn-fg:#f0c77a; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.7;margin:0}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:32px 64px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px}
@@ -69,13 +68,10 @@ td code{white-space:nowrap}
 .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0;font-size:14px}
 .flow span{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px}
 .flow i{font-style:normal;color:var(--muted)}
-/* 输入框示意：灰字在占位位置，右侧 Tab 提示 */
-.demo{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:14px 0;max-width:640px}
-.demo-line{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px;min-height:28px}
-.demo-line .ghost{color:var(--ghost);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.demo-line .typed{color:var(--fg)}
-.demo-line .hint{flex:0 0 auto;font-size:12px;color:var(--muted);white-space:nowrap}
-.demo-cap{font-size:12px;color:var(--muted);margin-top:6px}
+/* 交互原型：同目录 prototype.html 以 ?embed=1 嵌入（只留问数主卡片）；窄屏时开发视图换到下方，框要更高 */
+.proto{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;margin:14px 0 8px}
+.proto iframe{display:block;width:100%;height:880px;border:0}
+@media (max-width:860px){.proto iframe{height:1560px}}
 footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:14px}
 @media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr);gap:8px}nav.toc{display:none}header.top h1{font-size:25px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -87,6 +83,7 @@ footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid va
 <nav class="toc" aria-label="目录">
   <div class="brand">brain-query · 下一句预测</div>
   <a href="#steps">对接步骤</a>
+  <a href="#demo">交互原型</a>
   <a href="#when">什么时候调</a>
   <a href="#common">通用约定</a>
   <a href="#predict">预测下一句</a>
@@ -117,14 +114,13 @@ footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid va
     <li><span>返回的 <code>text</code> 不为空，且 <code>turn_id</code> 等于刚记下的 <code>session_turn_id</code>：输入框为空时，把 <code>text</code> 显示成灰字（占位符的位置），旁边提示「Tab 采用」。</span></li>
     <li><span>用户按 <kbd>Tab</kbd>（或光标在末尾时按 <kbd>→</kbd>）：把 <code>text</code> 填进输入框，<b>不自动发送</b>。用户可以先改再回车，发送走正常问数。</span></li>
   </ol>
-  <div class="demo" aria-label="输入框示意">
-    <div class="demo-line"><span class="ghost">近 7 天次日留存为什么比上周低？</span><span class="hint"><kbd>Tab</kbd> 采用</span></div>
-    <div class="demo-cap">输入框为空时：灰字占据占位符的位置</div>
-  </div>
-  <div class="demo" aria-label="输入框示意：输入了开头">
-    <div class="demo-line"><span><span class="typed">近 7 天次日</span><span class="ghost">留存为什么比上周低？</span></span><span class="hint"><kbd>Tab</kbd> 采用</span></div>
-    <div class="demo-cap">用户输入的正好是灰字开头：继续显示剩下的部分</div>
-  </div>
+</section>
+
+<section id="demo">
+  <h2>交互原型</h2>
+  <p>可以直接操作：点一张推荐卡片提问，回答结束后输入框出现灰字，按 <kbd>Tab</kbd> 填入；打一两个字看灰字怎么跟随。右侧「开发视图」可以切换本轮怎么结束、接口返回什么，时间线逐帧显示什么时候调接口。界面按智能问数页面画，回答正文用占位条代替，耗时压缩到两三秒。</p>
+  <div class="proto"><iframe src="prototype.html?embed=1" title="输入框灰字交互原型" loading="lazy"></iframe></div>
+  <p><a href="prototype.html" target="_blank" rel="noopener">在新窗口全屏打开</a>（带平台导航栏和左侧菜单）</p>
 </section>
 
 <section id="when">

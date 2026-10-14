@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>输入框灰字原型</title>
+<style>
+/* 智能问数页面的交互原型：灰字（下一句预测）+ 前端调用时机。?embed=1 时只留问数主卡片（手册里嵌入用） */
+:root{--accent:#1b2a6b;--nav:#0f1b5c;--fg:#1d2130;--muted:#5b6275;--line:#e3e6ee;--chip:#f5f6f8;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:#f0f2f5;color:var(--fg);font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif}
+button{font-family:inherit}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+button:focus-visible,a:focus-visible{outline:2px solid #3b5bdb;outline-offset:2px}
+.topbar{background:var(--nav);color:#fff;display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:0 24px;min-height:56px}
+.logo{font-size:26px;font-weight:800;letter-spacing:1px}
+.topnav{display:flex;flex-wrap:wrap;gap:4px;flex:1 1 auto;min-width:0}
+.topnav a{color:#d9def0;text-decoration:none;font-size:14px;padding:18px 12px;display:inline-flex;align-items:center;gap:4px}
+.topnav a[aria-current]{color:#fff;font-weight:700;padding-bottom:15px;border-bottom:3px solid #fff}
+.top-actions{display:flex;align-items:center;gap:6px}
+.iconbtn{width:40px;height:40px;border:0;background:transparent;color:inherit;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px}
+.user{display:inline-flex;align-items:center;gap:8px;margin-left:8px;font-size:14px}
+.avatar{width:32px;height:32px;border-radius:50%;background:#5d6b8a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto}
+.body{display:flex;flex-wrap:wrap;align-items:stretch}
+.sidebar{flex:0 0 210px;background:#fff;padding:12px 0}
+.side-group{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;font-size:15px;color:#2f3546}
+.side-group.open{color:var(--accent);font-weight:600;padding:10px 20px}
+.side-group span{display:inline-flex;align-items:center;gap:8px}
+.side-nav{display:flex;flex-direction:column;gap:2px;padding:4px 12px 8px}
+.side-nav a{display:block;padding:11px 16px;color:var(--muted);font-size:14px;text-decoration:none;border-radius:6px}
+.side-nav a[aria-current]{background:#eef1fb;border-left:3px solid var(--accent);padding-left:13px;color:var(--accent);font-weight:600}
+.content{flex:999 1 600px;min-width:0;display:flex;flex-direction:column}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:6px 16px 0;font-size:14px;color:#2f3546}
+.tabs span{padding:8px 16px}
+.tabs .on{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#fff;border-radius:4px 4px 0 0;color:var(--fg)}
+.card{margin:0 16px 16px;background:#fff;border-radius:4px;display:flex;flex-direction:column}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px}
+.toolbar{display:inline-flex;gap:2px;padding:3px;border:1px solid #e6e8ef;border-radius:999px;box-shadow:0 1px 4px rgba(15,27,92,.06)}
+.toolbar button{width:40px;height:36px;border:0;border-radius:999px;background:transparent;color:#2f3546;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.toolbar button.bot-ic{color:#3b5bdb}
+.toolbar button:hover{background:#f1f3f8}
+.head-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px}
+.devtoggle{min-height:36px;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;border:1px dashed #c3c8d6;background:#fff;color:#4a5163}
+.devtoggle[aria-pressed="true"]{border-color:var(--accent);background:rgba(27,42,107,.08);color:var(--accent)}
+.select{min-width:190px;min-height:36px;display:inline-flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px;border:1px solid #dcdfe6;border-radius:4px;background:#fff;font-size:14px;color:#2f3546;cursor:pointer}
+.split{display:flex;flex-wrap:wrap;align-items:stretch;border-top:1px solid #f1f2f6}
+.chatcol{flex:999 1 520px;min-width:0;height:800px;display:flex;flex-direction:column}
+.welcome{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px 16px;background:radial-gradient(ellipse 50% 45% at 50% 45%,#f1f2fb 0%,#fff 100%)}
+.welcome h1{margin:0;font-size:30px;line-height:40px;font-weight:700;text-align:center}
+.welcome .sub{margin:0;font-size:14px;color:#8a90a0}
+.modes{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:#fff;box-shadow:0 1px 6px rgba(15,27,92,.1)}
+.modes button{min-height:40px;display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:0;border-radius:999px;font-size:15px;cursor:pointer;background:transparent;color:#2f3546}
+.modes button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.mode-desc{margin:6px 0 0;font-size:14px;line-height:22px;color:var(--muted);text-align:center;max-width:680px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;max-width:664px;margin-top:18px}
+.cards button{min-height:56px;display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #e6e8ef;border-radius:10px;background:#fff;font-size:14px;color:#2f3546;text-align:left;cursor:pointer}
+.cards button:hover{border-color:#c9cee0}
+.cards .ic{width:30px;height:30px;border-radius:8px;background:#eef0fa;color:#4c5bb0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.chat{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column-reverse;padding:24px 16px}
+.thread{width:100%;max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+.turn{display:flex;flex-direction:column;gap:18px}
+.ask{display:flex;justify-content:flex-end;align-items:flex-start;gap:10px}
+.bubble{max-width:75%;background:#eef0fb;border-radius:12px;padding:10px 16px;font-size:15px;line-height:24px}
+.ask .avatar{width:36px;height:36px;font-size:14px}
+.answer{display:flex;gap:12px;align-items:flex-start}
+.bot{width:36px;height:36px;border-radius:50%;background:#1d2130;color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ans-body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:14px}
+.status{display:flex;align-items:center;gap:8px;min-height:36px;font-size:14px;color:var(--muted);font-weight:600}
+.dot{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ans-title{margin:0;font-size:18px;line-height:28px;font-weight:700}
+.skel{display:flex;flex-direction:column;gap:10px}
+.skel i{display:block;height:12px;border-radius:6px;background:#eceef4}
+.chart{height:150px;border:1px solid #eceef4;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.chart svg{max-width:90%}
+.stop{margin:0;font-size:15px;line-height:24px;color:#4a5163}
+.guess{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid #eef0f4}
+.guess-title{font-size:15px;color:#6b7285}
+.chip{align-self:flex-start;max-width:100%;min-height:44px;text-align:left;font-size:14px;line-height:22px;color:#2f3546;background:var(--chip);border:0;border-radius:10px;padding:10px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:12px}
+.chip:hover{background:#eceef3}
+.chip svg{flex:0 0 auto}
+.fb{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.fb button{position:relative;width:36px;height:36px;border:0;background:transparent;color:inherit;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.fb .blue{color:#3b5bdb}
+.badge{position:absolute;top:-6px;right:-6px;font-size:11px;line-height:16px;padding:0 5px;border-radius:999px;background:#c8473a;color:#fff}
+.composer-wrap{padding:8px 16px 18px}
+.composer-inner{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.composer{border:1px solid var(--line);border-radius:12px;background:#fff;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 10px rgba(15,27,92,.05)}
+.composer:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(27,42,107,.12)}
+.field{position:relative}
+.ghost{position:absolute;left:0;right:96px;top:0;bottom:0;padding:8px 0;font-size:15px;line-height:24px;white-space:pre;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.ghost .t{color:transparent}
+.ghost .r{color:#9097a8}
+#ask{position:relative;width:100%;border:0;outline:none;background:transparent;padding:8px 0;font-size:15px;line-height:24px;font-family:inherit;color:var(--fg)}
+.tabhint{position:absolute;right:0;top:8px;display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:22px;color:#6b7285;pointer-events:none}
+kbd{font-family:inherit;font-size:12px;line-height:18px;border:1px solid #cfd3df;border-bottom-width:2px;border-radius:5px;padding:0 6px;background:#f7f8fb;color:#2f3546}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{min-height:32px;display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:13px;color:#4a5163;cursor:pointer}
+.pill.dim{color:#8a90a0}
+.tools{display:flex;align-items:center;gap:4px}
+.tools .iconbtn{width:36px;height:36px;color:#8a90a0}
+.send{width:36px;height:36px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.send:disabled{background:#c3c8d6;cursor:not-allowed}
+.output{display:flex;align-items:center;gap:10px;font-size:13px;color:#6b7285}
+.output .box{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;color:#2f3546}
+.dev{flex:1 1 340px;min-width:0;max-height:800px;overflow-y:auto;border-left:1px solid #eceef3;background:#fafbfd;padding:16px;display:flex;flex-direction:column;gap:14px}
+.dev-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dev h2{font-size:15px;margin:0}
+.dev .muted{font-size:12px;color:var(--muted)}
+.dev .label{font-size:13px;color:#4a5163;margin-bottom:8px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts button{min-height:36px;padding:6px 12px;border-radius:999px;font-size:13px;cursor:pointer;border:1px solid #d7dbe6;background:#fff;color:#2f3546}
+.opts button[aria-pressed="true"]{border-color:var(--accent);background:rgba(27,42,107,.1);color:var(--accent)}
+.rules{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #e6e8ef;border-radius:10px;background:#fff}
+.rules b{font-size:13px}
+.rules ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:12px;line-height:19px;color:#2f3546}
+.log-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.log-head b{font-size:13px}
+.log{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.row{display:grid;grid-template-columns:46px 40px minmax(0,1fr);gap:8px;align-items:start;padding:6px 8px;border-radius:8px}
+.row.api{background:rgba(27,42,107,.05)}
+.row .tm{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:12px;line-height:20px;color:var(--muted)}
+.tag{font-size:12px;line-height:20px;text-align:center;border-radius:6px}
+.tag.sse{background:#eef0f4;color:#3d4456}
+.tag.api{background:rgba(27,42,107,.12);color:var(--accent)}
+.tag.ui{background:#e4f2ea;color:#1f6640}
+.tag.skip{background:#f8ecd9;color:#7d4c0d}
+.row .l{display:block;font-size:13px;line-height:20px}
+.row .d{display:block;font-size:12px;line-height:18px;color:#4a5163;word-break:break-all}
+.embed body{background:#fff}
+.embed .topbar,.embed .sidebar,.embed .tabs{display:none}
+.embed .card{margin:0}
+@media (max-width:640px){.welcome h1{font-size:24px;line-height:32px}.cards{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="logo">BOKE</span>
+  <nav class="topnav" aria-label="平台导航">
+    <a href="#">系统管理</a><a href="#">CMDB</a><a href="#">运维工单</a><a href="#">查询系统</a><a href="#">审批管理</a><a href="#">巡检平台</a>
+    <a href="#" aria-current="page">智能问数</a>
+    <a href="#">更多<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+  </nav>
+  <div class="top-actions">
+    <button type="button" class="iconbtn" aria-label="工单"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+    <button type="button" class="iconbtn" aria-label="帮助"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+    <button type="button" class="iconbtn" aria-label="切换主题"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/></svg></button>
+    <span class="user"><span class="avatar" aria-hidden="true">吉</span>吉云飞<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+  </div>
+</header>
+
+<div class="body">
+<aside class="sidebar" aria-label="功能菜单">
+  <div class="side-group open"><span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg>智能问数</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></div>
+  <nav class="side-nav" aria-label="智能问数">
+    <a href="#" aria-current="page">智能问数</a><a href="#">问数日志</a><a href="#">Skill管理</a><a href="#">分析包管理</a><a href="#">知识库</a><a href="#">订阅中心</a><a href="#">订阅推送日志</a><a href="#">分享日志</a><a href="#">模型配置</a>
+  </nav>
+  <div class="side-group"><span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M20 12c0 1.7-3.6 3-8 3s-8-1.3-8-3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/></svg>数据治理</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="side-group"><span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>权限管理</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="side-group"><span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>MCP管理</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+</aside>
+
+<main class="content">
+  <div class="tabs" aria-hidden="true">
+    <span class="on"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>智能问数<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+    <span>问数日志</span><span>模型配置</span><span>分享日志</span><span>连接源管理</span><span>订阅中心</span><span>订阅推送日志</span>
+  </div>
+
+  <section class="card" aria-label="智能问数">
+    <div class="card-head">
+      <div class="toolbar" role="toolbar" aria-label="会话">
+        <button type="button" class="bot-ic" aria-label="智能问数"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg></button>
+        <button type="button" id="btn-history" aria-label="打开历史会话（演示）" title="打开历史会话（演示）"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+        <button type="button" id="btn-new" aria-label="新会话" title="新会话"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+      </div>
+      <div class="head-right">
+        <button type="button" class="devtoggle" id="devtoggle" aria-pressed="true" aria-controls="dev"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>开发视图</button>
+        <span>当前项目:</span>
+        <button type="button" class="select">捕鱼游戏王<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8f96a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="chatcol">
+        <div class="welcome" id="welcome">
+          <h1>你好，吉云飞，我是你的数据助手</h1>
+          <p class="sub">直接问我关于数据的任何问题</p>
+          <div class="modes" role="group" aria-label="问数模式">
+            <button type="button" data-mode="deep" aria-pressed="true"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>深度模式</button>
+            <button type="button" data-mode="fast" aria-pressed="false"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>快速模式</button>
+          </div>
+          <p class="mode-desc" id="mode-desc"></p>
+          <div class="cards">
+            <button type="button" data-q="近7天次日留存率变化"><span class="ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg></span>近7天次日留存率变化</button>
+            <button type="button" data-q="近7天红宝石产出趋势"><span class="ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg></span>近7天红宝石产出趋势</button>
+            <button type="button" data-q="近7天投放用户付费金额"><span class="ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg></span>近7天投放用户付费金额</button>
+            <button type="button" data-q="近7天首充用户数分群"><span class="ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg></span>近7天首充用户数分群</button>
+          </div>
+        </div>
+
+        <div class="chat" id="chat" hidden>
+          <div class="thread" id="thread"></div>
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer-inner">
+            <div class="composer">
+              <label for="ask" class="sr">输入你的问题</label>
+              <div class="field">
+                <div class="ghost" id="ghost" aria-hidden="true" hidden><span class="t" id="ghost-t"></span><span class="r" id="ghost-r"></span></div>
+                <input id="ask" type="text" autocomplete="off" placeholder="请输入你的问题…" aria-describedby="tabhint">
+                <span class="tabhint" id="tabhint" hidden><kbd>Tab</kbd>采用</span>
+              </div>
+              <div class="bar">
+                <div class="pills">
+                  <button type="button" class="pill"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>Auto<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                  <button type="button" class="pill"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>捕鱼游戏王<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                  <button type="button" class="pill dim"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>选择技能<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                </div>
+                <div class="tools">
+                  <button type="button" class="iconbtn" aria-label="上传附件"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+                  <button type="button" class="iconbtn" aria-label="展开输入框"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+                  <button type="button" class="send" id="send" aria-label="发送" disabled><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+                </div>
+              </div>
+              <div class="sr" aria-live="polite" id="live"></div>
+            </div>
+            <div class="output"><span>产出:</span><span class="box"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="#3370ff"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>飞书文档</span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="dev" id="dev" aria-label="开发视图">
+        <div class="dev-head"><h2>开发视图</h2><span class="muted">只在原型里有，上线不显示</span></div>
+        <div>
+          <div class="label">下一问怎么结束</div>
+          <div class="opts" role="group" aria-label="下一问怎么结束">
+            <button type="button" data-end="end" aria-pressed="true">正常结束（end）</button>
+            <button type="button" data-end="cancelled" aria-pressed="false">用户点停止（cancelled）</button>
+            <button type="button" data-end="error" aria-pressed="false">出错（error）</button>
+          </div>
+        </div>
+        <div>
+          <div class="label">/suggest/next 返回</div>
+          <div class="opts" role="group" aria-label="接口返回">
+            <button type="button" data-api="chip" aria-pressed="true">与某条猜你想问同句</button>
+            <button type="button" data-api="own" aria-pressed="false">模型自写一句</button>
+            <button type="button" data-api="empty" aria-pressed="false">返回空串</button>
+            <button type="button" data-api="fail" aria-pressed="false">接口失败 502</button>
+          </div>
+        </div>
+        <div class="rules">
+          <b>前端调用规则</b>
+          <ol>
+            <li>收到 end 帧（带 session_turn_id）立即调；打开历史会话调一次；空会话不调。</li>
+            <li>收到 cancelled 或 error 不调。</li>
+            <li>返回的 turn_id 不是最新一轮就丢弃；text 为空或报错，不出灰字也不提示。</li>
+            <li>输入框为空时显示灰字；Tab（或光标在末尾按 →）只填入不发送；输入不是灰字开头就隐藏；输入法组字时不拦截 Tab 和回车。</li>
+          </ol>
+        </div>
+        <div>
+          <div class="log-head"><b>事件时间线</b><span class="muted">从本次操作起计时</span></div>
+          <div class="log" id="log"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(function () {
+  if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('embed');
+
+  var LATENCY_MS = 1200;
+  var MODES = {
+    deep: '适合复杂问题与深度探究，可拆解原因、连续追问，并结合上下文逐步分析；也可选择 Skill 执行固定分析',
+    fast: '适合单个指标、简单取数的问题，回答更快'
+  };
+  var LABELS = { thinking: '执行中 · 第 3 步…', writing: '正在生成结论…', done: '执行完成 · 8 步 · 2.2 秒（演示压缩）',
+                 cancelled: '已停止', error: '执行出错' };
+  var DOTS = { thinking: '#b6bccb', writing: '#1b2a6b', done: '#2f9e5b', cancelled: '#b86e10', error: '#b3372b' };
+  var TAGS = { 'SSE': 'sse', '接口': 'api', '界面': 'ui', '跳过': 'skip' };
+  var ICON_CHECK = '<svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"/></svg>';
+  var ICON_CHEV = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a0a6b5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  var ICON_ARROW = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a0a6b5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  var ICON_BOT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg>';
+  var SKELETON = '<div class="skel" aria-hidden="true"><i style="width:100%"></i><i style="width:94%"></i><i style="width:58%"></i>'
+    + '<div class="chart"><svg width="420" height="100" viewBox="0 0 420 100" fill="none"><polyline points="0,46 70,52 140,62 210,56 280,14 350,74 420,66" stroke="#c4c9da" stroke-width="2.5" fill="none" stroke-linejoin="round"/></svg></div></div>';
+  var FEEDBACK = '<div class="fb">'
+    + '<button type="button" aria-label="有用"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>'
+    + '<button type="button" aria-label="没用"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg></button>'
+    + '<button type="button" class="blue" aria-label="订阅"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="badge">新</span></button>'
+    + '<button type="button" class="blue" aria-label="分享"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span class="badge">新</span></button>'
+    + '</div>';
+
+  var state = { turns: [], phase: 'idle', draft: '', ghost: '', endMode: 'end', apiMode: 'chip', log: [], mode: 'deep', devOpen: true };
+  var timers = [];
+  var t0 = Date.now();
+  var $ = function (id) { return document.getElementById(id); };
+  var input = $('ask');
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function spec(key, q) {
+    if (key === 'gem1') {
+      return { title: '近7天红宝石产出窄幅波动，中途冲高后连跌两日',
+               chips: ['10-12 为什么跌得最多？', '近7天产出按来源拆一下', '和上周同期相比怎么样？'],
+               own: '10-13 之后还在继续跌吗？' };
+    }
+    if (key === 'gem2') {
+      return { title: '产出人数下降与登录活跃下降同步，具体原因还没查明',
+               chips: ['主渠道 10-13 的登录人数较前 6 日日均降了多少，与产出人数降幅是否同步？',
+                       '国庆活动结束前后的 DAU 与产出人数对比如何？'],
+               own: '查一下主渠道 10-13 的登录人数，看是不是活跃问题' };
+    }
+    return { title: '示例结论：' + q,
+             chips: ['这个变化主要来自哪部分？', '和上周同期相比怎么样？', '把明细导出来看看'],
+             own: '可以，以后每天按这个口径发我' };
+  }
+
+  function specKeyFor(q) {
+    var prev = state.turns[state.turns.length - 1];
+    if (q.indexOf('红宝石') >= 0) return 'gem1';
+    if (prev && prev.specKey === 'gem1') return 'gem2';
+    return 'generic';
+  }
+
+  function stamp() { return '+' + ((Date.now() - t0) / 1000).toFixed(1) + 's'; }
+  function later(ms, fn) { timers.push(setTimeout(fn, ms)); }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function turnById(id) { return state.turns.filter(function (t) { return t.turnId === id; })[0]; }
+
+  function push(tag, label, detail) {
+    state.log.push({ t: stamp(), tag: tag, label: label, detail: detail || '' });
+    renderLog();
+  }
+
+  function setTurn(id, patch) {
+    var t = turnById(id);
+    if (t) Object.keys(patch).forEach(function (k) { t[k] = patch[k]; });
+    renderThread();
+  }
+
+  function setIdle() { state.phase = 'idle'; renderComposer(); }
+
+  function restart(turns, label, detail, call) {
+    clearTimers();
+    t0 = Date.now();
+    state.turns = turns; state.phase = 'idle'; state.draft = ''; state.ghost = ''; state.log = [];
+    renderAll();
+    push('界面', label, detail);
+    if (call) callSuggest(turns[turns.length - 1].turnId, 300, true);
+  }
+
+  function send(text) {
+    var q = String(text || '').trim();
+    if (!q || state.phase !== 'idle') return;
+    var no = state.turns.length + 1, turnId = 't-' + no, key = specKeyFor(q), mode = state.endMode;
+    clearTimers();
+    t0 = Date.now();
+    state.turns.push({ no: no, q: q, specKey: key, status: 'thinking', turnId: turnId });
+    state.phase = 'streaming'; state.draft = ''; state.ghost = ''; state.log = [];
+    renderAll();
+    push('界面', '发送问题', q);
+    later(100, function () { push('SSE', 'started', ''); });
+    later(600, function () { push('SSE', '过程帧', '取数、校验等步骤（真实约几十秒）'); });
+    later(1200, function () { setTurn(turnId, { status: 'writing' }); push('SSE', '结论正文流式输出', ''); });
+    if (mode === 'end') {
+      later(2000, function () { push('SSE', 'conclusion_end', 'session_turn_id=' + turnId); });
+      later(2100, function () { setTurn(turnId, { status: 'done' }); push('SSE', 'followups', spec(key, q).chips.length + ' 条猜你想问'); });
+      later(2200, function () {
+        push('SSE', 'end', 'session_turn_id=' + turnId);
+        setIdle();
+        callSuggest(turnId, LATENCY_MS, false);
+      });
+      return;
+    }
+    later(1700, function () {
+      setTurn(turnId, { status: mode });
+      setIdle();
+      push('SSE', mode, '');
+      push('跳过', '不调 /suggest/next', mode === 'cancelled' ? '用户点了停止' : '本轮出错');
+    });
+  }
+
+  function callSuggest(turnId, wait, cached) {
+    var apiMode = state.apiMode;
+    push('接口', 'POST /suggest/next', '{"session_id":"s-demo","project":"捕鱼游戏王","user_id":"u-demo"}');
+    later(wait, function () {
+      if (apiMode === 'fail') { push('跳过', '返回 502', '静默处理：不出灰字、不提示用户'); return; }
+      var asked = turnById(turnId);
+      var s = asked ? spec(asked.specKey, asked.q) : { chips: [], own: '' };
+      var text = apiMode === 'chip' ? (s.chips[0] || s.own) : (apiMode === 'own' ? s.own : '');
+      push('接口', '返回 200', 'turn_id=' + turnId + ' · cached=' + (cached ? 'true' : 'false') + ' · text=' + (text ? '「' + text + '」' : '空串'));
+      var latest = state.turns[state.turns.length - 1];
+      if (!latest || latest.turnId !== turnId || state.phase !== 'idle') { push('跳过', '丢弃结果', 'turn_id 已不是最新一轮（用户已发新问题）'); return; }
+      if (!text) { push('界面', '不出灰字', '保持默认占位「请输入你的问题…」'); return; }
+      state.ghost = text;
+      renderComposer();
+      push('界面', '显示灰字', '输入框为空时显示，按 Tab 采用');
+    });
+  }
+
+  function ghostView() {
+    var ready = !!state.ghost && state.phase === 'idle';
+    var prefix = ready && !!state.draft && state.ghost.indexOf(state.draft) === 0 && state.draft !== state.ghost;
+    var visible = ready && (!state.draft || prefix);
+    return { visible: visible, rest: visible ? state.ghost.slice(state.draft.length) : '' };
+  }
+
+  function accept(key) {
+    state.draft = state.ghost;
+    renderComposer();
+    push('界面', key + ' 采用灰字', '填入输入框，不自动发送');
+  }
+
+  function turnHTML(t) {
+    var s = spec(t.specKey, t.q), done = t.status === 'done', shown = done || t.status === 'writing';
+    var h = '<article class="turn"><div class="ask"><div class="bubble">' + esc(t.q) + '</div><span class="avatar" aria-hidden="true">吉</span></div>'
+      + '<div class="answer"><span class="bot" aria-hidden="true">' + ICON_BOT + '</span><div class="ans-body">'
+      + '<div class="status"><span class="dot" style="background:' + DOTS[t.status] + '">' + (done ? ICON_CHECK : '') + '</span><span>' + LABELS[t.status] + '</span>' + ICON_CHEV + '</div>';
+    if (shown) h += '<h3 class="ans-title">' + esc(s.title) + '</h3>' + SKELETON;
+    if (t.status === 'cancelled') h += '<p class="stop">已按你的要求停止本次查询。</p>';
+    if (t.status === 'error') h += '<p class="stop">本次查询出错，请重试。</p>';
+    if (done) {
+      h += '<div class="guess"><div class="guess-title">猜你想问</div>' + s.chips.map(function (c) {
+        return '<button type="button" class="chip" data-chip="' + esc(c) + '"><span>' + esc(c) + '</span>' + ICON_ARROW + '</button>';
+      }).join('') + '</div>' + FEEDBACK;
+    }
+    return h + '</div></div></article>';
+  }
+
+  function renderThread() {
+    var has = state.turns.length > 0;
+    $('welcome').hidden = has;
+    $('chat').hidden = !has;
+    $('thread').innerHTML = has ? state.turns.map(turnHTML).join('') : '';
+  }
+
+  function renderComposer() {
+    var g = ghostView();
+    if (input.value !== state.draft) input.value = state.draft;
+    input.placeholder = g.visible ? '' : '请输入你的问题…';
+    $('ghost').hidden = !g.visible;
+    $('tabhint').hidden = !g.visible;
+    $('ghost-t').textContent = g.visible ? state.draft : '';
+    $('ghost-r').textContent = g.rest;
+    $('live').textContent = g.visible && !state.draft ? '建议输入：' + state.ghost + '，按 Tab 采用' : '';
+    $('send').disabled = state.phase !== 'idle' || !state.draft.trim();
+  }
+
+  function renderModes() {
+    document.querySelectorAll('[data-mode]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === state.mode));
+    });
+    $('mode-desc').textContent = MODES[state.mode];
+  }
+
+  function renderDev() {
+    $('dev').hidden = !state.devOpen;
+    $('devtoggle').setAttribute('aria-pressed', String(state.devOpen));
+    document.querySelectorAll('[data-end]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-end') === state.endMode));
+    });
+    document.querySelectorAll('[data-api]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-api') === state.apiMode));
+    });
+  }
+
+  function renderLog() {
+    $('log').innerHTML = state.log.map(function (r) {
+      var cls = TAGS[r.tag] || 'sse';
+      return '<div class="row' + (cls === 'api' ? ' api' : '') + '"><span class="tm">' + esc(r.t) + '</span>'
+        + '<span class="tag ' + cls + '">' + esc(r.tag) + '</span><div><span class="l">' + esc(r.label) + '</span>'
+        + (r.detail ? '<span class="d">' + esc(r.detail) + '</span>' : '') + '</div></div>';
+    }).join('');
+  }
+
+  function renderAll() { renderThread(); renderComposer(); renderModes(); renderDev(); renderLog(); }
+
+  input.addEventListener('input', function () { state.draft = input.value; renderComposer(); });
+  input.addEventListener('keydown', function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    var g = ghostView();
+    if (e.key === 'Tab' && !e.shiftKey && g.visible) { e.preventDefault(); accept('Tab'); return; }
+    if (e.key === 'ArrowRight' && g.visible && input.selectionStart === state.draft.length) { e.preventDefault(); accept('→'); return; }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(state.draft); }
+  });
+  $('send').addEventListener('click', function () { send(state.draft); });
+  $('thread').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-chip]');
+    if (b) send(b.getAttribute('data-chip'));
+  });
+  document.querySelectorAll('[data-q]').forEach(function (b) {
+    b.addEventListener('click', function () { send(b.getAttribute('data-q')); });
+  });
+  document.querySelectorAll('[data-mode]').forEach(function (b) {
+    b.addEventListener('click', function () { state.mode = b.getAttribute('data-mode'); renderModes(); });
+  });
+  document.querySelectorAll('[data-end]').forEach(function (b) {
+    b.addEventListener('click', function () { state.endMode = b.getAttribute('data-end'); renderDev(); });
+  });
+  document.querySelectorAll('[data-api]').forEach(function (b) {
+    b.addEventListener('click', function () { state.apiMode = b.getAttribute('data-api'); renderDev(); });
+  });
+  $('devtoggle').addEventListener('click', function () { state.devOpen = !state.devOpen; renderDev(); });
+  $('btn-history').addEventListener('click', function () {
+    restart([{ no: 1, q: '近7天红宝石产出趋势', specKey: 'gem1', status: 'done', turnId: 't-1' }],
+            '打开历史会话', '会话里已有 1 轮回答', true);
+  });
+  $('btn-new').addEventListener('click', function () {
+    restart([], '新会话', '空会话：还没有轮次，不调 /suggest/next', false);
+  });
+  document.querySelectorAll('a[href="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); });
+  });
+
+  renderAll();
+  push('界面', '打开智能问数首页', '空会话：还没有轮次，不调 /suggest/next');
+})();
+</script>
+</body>
+</html>
