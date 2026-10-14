@@ -149,7 +149,7 @@ footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid va
       <tr><td>数据</td><td>只读会话记录，不查数仓，不需要查数凭据。</td></tr>
       <tr><td>复用</td><td>同一轮只生成一次，结果随该轮保存，再调直接返回（<code>cached</code> 为 true）；用户问了新一轮自然换新结果。</td></tr>
       <tr><td>鉴权</td><td>与问数接口相同：服务端开启口令时带请求头 <code>X-Api-Token</code>。</td></tr>
-      <tr><td>耗时</td><td>首次通常 1–2 秒，已生成过的几乎即时。主模型不可用、转兜底时会更长。前端建议 15 秒超时，超时直接放弃、不出灰字。</td></tr>
+      <tr><td>耗时</td><td>首次通常 1–2 秒，已生成过的几乎即时。主模型 10 秒左右不出字会转兜底模型，这时总共约 15 秒。前端建议 20 秒超时，超时直接放弃、不出灰字；结果回来时输入框已经有内容，就不再显示。</td></tr>
     </tbody>
   </table></div>
 </section>
