@@ -129,7 +129,7 @@ footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid va
     <thead><tr><th>场景</th><th>调不调</th><th>说明</th></tr></thead>
     <tbody>
       <tr><td>流式回答收到 <code>end</code> 帧</td><td>调</td><td>主要时机。服务端在发 <code>end</code> 之前已经写好本轮记录，这时调一定读得到</td></tr>
-      <tr><td>打开历史会话（已有问答）</td><td>调一次</td><td>对最后一轮预测。同一服务进程里该轮生成过，会直接返回缓存</td></tr>
+      <tr><td>打开历史会话（已有问答）</td><td>调一次</td><td>对最后一轮预测。该轮生成过的话直接返回已有结果</td></tr>
       <tr><td>新会话、首页（还没有问答）</td><td>不调</td><td>调了也只返回空 <code>text</code></td></tr>
       <tr><td>收到 <code>cancelled</code>（用户停止）或 <code>error</code></td><td>不调</td><td>本轮没有完整回答，不出灰字</td></tr>
       <tr><td>同一轮已经拿到过结果</td><td>不再调</td><td>用户把输入删空时，直接复用已拿到的 <code>text</code>。重复调用不会多花钱（走缓存），但没必要</td></tr>
@@ -147,9 +147,9 @@ footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid va
       <tr><td>依据</td><td>本会话最近 3 轮的提问与回答（含取数结果），以及最后一轮回答下方展示的「猜你想问」。</td></tr>
       <tr><td>模型</td><td>模型配置页「结果与分析模型」的主模型，失败自动转兜底模型。</td></tr>
       <tr><td>数据</td><td>只读会话记录，不查数仓，不需要查数凭据。</td></tr>
-      <tr><td>缓存</td><td>同一轮只生成一次，结果按「项目 + 会话 + 轮次」缓存在服务进程内；用户问了新一轮自然换新结果。服务重启后再调会重新生成。</td></tr>
+      <tr><td>复用</td><td>同一轮只生成一次，结果随该轮保存，再调直接返回（<code>cached</code> 为 true）；用户问了新一轮自然换新结果。</td></tr>
       <tr><td>鉴权</td><td>与问数接口相同：服务端开启口令时带请求头 <code>X-Api-Token</code>。</td></tr>
-      <tr><td>耗时</td><td>首次通常 1–2 秒，走缓存几乎即时。主模型不可用、转兜底时会更长。前端建议 15 秒超时，超时直接放弃、不出灰字。</td></tr>
+      <tr><td>耗时</td><td>首次通常 1–2 秒，已生成过的几乎即时。主模型不可用、转兜底时会更长。前端建议 15 秒超时，超时直接放弃、不出灰字。</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -185,7 +185,7 @@ footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid va
       <tbody>
         <tr><td><code>turn_id</code></td><td>预测依据的轮次，即会话最新一轮，与该轮 <code>end</code> 帧里的 <code>session_turn_id</code> 相同。会话还没有问答时为空串</td></tr>
         <tr><td><code>text</code></td><td>灰字内容，单行。<b>空串表示这一轮不出灰字</b>（会话为空、模型没把握或输出不可用），保持默认占位即可</td></tr>
-        <tr><td><code>cached</code></td><td>是否命中缓存，仅供排查</td></tr>
+        <tr><td><code>cached</code></td><td>是否直接返回了该轮已生成的结果，仅供排查</td></tr>
         <tr><td><code>elapsed_ms</code></td><td>本次耗时（毫秒），仅供排查</td></tr>
         <tr><td><code>session_id</code> / <code>project</code></td><td>回显，<code>project</code> 是解析后的项目名</td></tr>
       </tbody>
